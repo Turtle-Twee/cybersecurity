@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud & Cyber Security — Thomas More Geel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
+
+  :root {
+    --green: #00ff41;
+    --green-dim: #00cc33;
+    --green-glow: rgba(0,255,65,0.15);
+    --green-glow-strong: rgba(0,255,65,0.4);
+    --dark: #0a0a0a;
+    --darker: #050505;
+    --panel: rgba(0,255,65,0.04);
+    --panel-border: rgba(0,255,65,0.18);
+    --red: #ff2020;
+    --cyan: #00f5ff;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--darker);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--green);
+    cursor: crosshair;
+  }
+
+  #matrix-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.13;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  #slides {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 60px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+  }
+
+  #nav {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    z-index: 9999;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--panel-border);
+    padding: 10px 22px;
+    border-radius: 40px;
+    backdrop-filter: blur(10px);
+  }
+
+  #nav button {
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    padding: 7px 18px;
+    cursor: pointer;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+  #nav button:hover {
+    background: var(--green-glow);
+    border-color: var(--green);
+    box-shadow: 0 0 12px var(--green-glow-strong);
+  }
+
+  #slide-counter {
+    font-size: 12px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+    min-width: 70px;
+    text-align: center;
+  }
+
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    z-index: 9999;
+    transition: width 0.4s ease;
+  }
+
+  .slide-tag {
+    position: absolute;
+    top: 22px;
+    left: 30px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green-dim);
+    opacity: 0.6;
+    text-transform: uppercase;
+  }
+
+  .slide-num {
+    position: absolute;
+    top: 22px;
+    right: 30px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green-dim);
+    opacity: 0.4;
+  }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(28px, 5vw, 56px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 30px var(--green-glow-strong), 0 0 60px rgba(0,255,65,0.2);
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(18px, 3vw, 30px);
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 0 15px var(--green-glow-strong);
+    margin-bottom: 30px;
+    text-align: center;
+  }
+
+  h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(12px, 1.5vw, 16px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  p, li {
+    font-family: 'Exo 2', sans-serif;
+    font-size: clamp(13px, 1.4vw, 16px);
+    line-height: 1.7;
+    color: rgba(0,255,65,0.85);
+  }
+
+  .subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(11px, 1.5vw, 15px);
+    letter-spacing: 3px;
+    color: var(--green-dim);
+    opacity: 0.75;
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 22px 28px;
+    position: relative;
+    box-shadow: inset 0 0 30px rgba(0,255,65,0.03), 0 0 20px rgba(0,0,0,0.5);
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20px;
+    width: 60px; height: 2px;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 1000px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; max-width: 1100px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; width: 100%; max-width: 1100px; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .tag {
+    background: rgba(0,255,65,0.07);
+    border: 1px solid rgba(0,255,65,0.25);
+    color: var(--green);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    font-family: 'Share Tech Mono', monospace;
+    text-transform: uppercase;
+  }
+  .tag.red { border-color: rgba(255,32,32,0.4); color: #ff6060; background: rgba(255,32,32,0.05); }
+  .tag.cyan { border-color: rgba(0,245,255,0.4); color: var(--cyan); background: rgba(0,245,255,0.05); }
+
+  .stat { text-align: center; padding: 16px; }
+  .stat-num {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 900;
+    color: var(--green);
+    text-shadow: 0 0 20px var(--green-glow-strong);
+    display: block;
+  }
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+    opacity: 0.7;
+    text-transform: uppercase;
+    margin-top: 4px;
+    display: block;
+  }
+
+  .timeline { width: 100%; max-width: 900px; }
+  .tl-item {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+  }
+  .tl-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .blink::after {
+    content: '█';
+    animation: blink 1s step-end infinite;
+    font-size: 0.8em;
+    margin-left: 3px;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .glitch {
+    position: relative;
+    display: inline-block;
+  }
+  .glitch::before, .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    overflow: hidden;
+  }
+  .glitch::before {
+    animation: glitch1 4s infinite linear;
+    color: var(--red);
+    clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+    text-shadow: 2px 0 var(--red);
+  }
+  .glitch::after {
+    animation: glitch2 4s infinite linear;
+    color: var(--cyan);
+    clip-path: polygon(0 60%, 100% 60%, 100% 75%, 0 75%);
+    text-shadow: -2px 0 var(--cyan);
+  }
+  @keyframes glitch1 {
+    0%,90%,100%{transform:translate(0)} 92%{transform:translate(-3px,1px)} 94%{transform:translate(3px,-1px)} 96%{transform:translate(0)}
+  }
+  @keyframes glitch2 {
+    0%,88%,100%{transform:translate(0)} 90%{transform:translate(3px,1px)} 93%{transform:translate(-3px,-1px)} 95%{transform:translate(0)}
+  }
+
+  ul.hacker-list { list-style: none; padding: 0; }
+  ul.hacker-list li {
+    padding: 6px 0 6px 22px;
+    position: relative;
+    border-bottom: 1px solid rgba(0,255,65,0.06);
+  }
+  ul.hacker-list li::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .cost-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,255,65,0.08);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+  }
+  .cost-row.total {
+    border-bottom: none;
+    border-top: 1px solid rgba(0,255,65,0.3);
+    margin-top: 6px;
+    padding-top: 12px;
+    font-size: 15px;
+    color: var(--green);
+  }
+  .cost-val { color: var(--green-dim); }
+  .cost-row.total .cost-val { color: var(--green); text-shadow: 0 0 10px var(--green); }
+
+  .hero-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--green-dim);
+    margin-bottom: 24px;
+    opacity: 0.6;
+    text-transform: uppercase;
+  }
+  .hero-badge {
+    margin-top: 28px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width:100%; max-width:750px; }
+  .day-col { text-align: center; }
+  .day-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .time-block {
+    background: rgba(0,255,65,0.06);
+    border: 1px solid rgba(0,255,65,0.15);
+    border-radius: 4px;
+    font-size: 10px;
+    padding: 6px 4px;
+    margin-bottom: 5px;
+    color: rgba(0,255,65,0.7);
+    line-height: 1.3;
+  }
+  .time-block.lab {
+    background: rgba(0,245,255,0.06);
+    border-color: rgba(0,245,255,0.2);
+    color: rgba(0,245,255,0.7);
+  }
+  .time-block.free {
+    background: transparent;
+    border-color: transparent;
+    color: rgba(0,255,65,0.2);
+  }
+
+  .skill-bar { margin-bottom: 14px; }
+  .skill-label { display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px; letter-spacing:1px; }
+  .skill-track {
+    height: 6px;
+    background: rgba(0,255,65,0.08);
+    border-radius: 3px;
+    border: 1px solid rgba(0,255,65,0.1);
+    overflow: hidden;
+  }
+  .skill-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-dim), var(--green));
+    box-shadow: 0 0 8px var(--green);
+    border-radius: 3px;
+    transition: width 1s ease;
+    animation: fillBar 1.5s ease forwards;
+  }
+  @keyframes fillBar { from{width:0} }
+
+  .highlight {
+    background: rgba(0,255,65,0.07);
+    border-left: 3px solid var(--green);
+    padding: 14px 18px;
+    margin: 10px 0;
+    box-shadow: 0 0 20px rgba(0,255,65,0.05);
+  }
+
+  .fade-children > * {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .slide.active .fade-children > *:nth-child(1) { opacity:1; transform:none; transition-delay:0.1s; }
+  .slide.active .fade-children > *:nth-child(2) { opacity:1; transform:none; transition-delay:0.2s; }
+  .slide.active .fade-children > *:nth-child(3) { opacity:1; transform:none; transition-delay:0.3s; }
+  .slide.active .fade-children > *:nth-child(4) { opacity:1; transform:none; transition-delay:0.4s; }
+  .slide.active .fade-children > *:nth-child(5) { opacity:1; transform:none; transition-delay:0.5s; }
+  .slide.active .fade-children > *:nth-child(6) { opacity:1; transform:none; transition-delay:0.6s; }
+
+  .corner-tl, .corner-tr, .corner-bl, .corner-br {
+    position: absolute;
+    width: 16px; height: 16px;
+    opacity: 0.3;
+  }
+  .corner-tl { top:8px; left:8px; border-top:2px solid var(--green); border-left:2px solid var(--green); }
+  .corner-tr { top:8px; right:8px; border-top:2px solid var(--green); border-right:2px solid var(--green); }
+  .corner-bl { bottom:8px; left:8px; border-bottom:2px solid var(--green); border-left:2px solid var(--green); }
+  .corner-br { bottom:8px; right:8px; border-bottom:2px solid var(--green); border-right:2px solid var(--green); }
+
+  #kb-hint {
+    position: fixed;
+    bottom: 80px;
+    right: 30px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(0,255,65,0.2);
+    z-index: 9999;
+  }
+
+  .slide-inner {
+    width: 100%;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,255,65,0.3) transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .slide { padding: 20px; }
+    .week-grid { grid-template-columns: repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div id="progress"></div>
+
+<div id="slides">
+
+  <!-- SLIDE 1 — TITEL -->
+  <div class="slide active" id="s1">
+    <div class="corner-tl"></div><div class="corner-tr"></div>
+    <div class="corner-bl"></div><div class="corner-br"></div>
+    <div class="slide-tag">INITIATIE // THOMAS MORE</div>
+    <div class="slide-num">01 / 09</div>
+
+    <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <div class="hero-logo">[ THOMAS MORE — CAMPUS GEEL ]</div>
+
+      <h1 class="glitch" data-text="CLOUD &amp; CYBER">CLOUD &amp; CYBER</h1>
+      <h1 class="glitch" data-text="SECURITY" style="color:var(--green); font-size:clamp(36px,7vw,80px);">SECURITY</h1>
+
+      <div class="subtitle blink">Professionele Bachelor Elektronica-ICT</div>
+
+      <div style="margin-top:12px; font-family:'Share Tech Mono'; font-size:12px; color:var(--green-dim); opacity:0.6; letter-spacing:2px;">
+        GEPRESENTEERD DOOR Ruben Gautam &nbsp;|&nbsp; 2025–2026
+      </div>
+
+      <div class="hero-badge">
+        <span class="tag">3 jaar voltijds</span>
+        <span class="tag">180 studiepunten</span>
+        <span class="tag cyan">Geel, Antwerpen</span>
+        <span class="tag red">Red Team / Blue Team</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2 — DE KERN -->
+  <div class="slide" id="s2">
+    <div class="slide-tag">DE OPLEIDING // CURRICULUM</div>
+    <div class="slide-num">02 / 09</div>
+    <div class="slide-inner fade-children">
+      <h2>DE KERN</h2>
+
+      <div class="grid-2" style="max-width:980px;">
+        <div class="panel">
+          <h3>> Officiële Benaming</h3>
+          <p style="margin-bottom:10px;">Professionele Bachelor in de Elektronica-ICT, keuzetraject <strong>Cloud and Cyber Security</strong></p>
+          <p style="font-size:13px; opacity:0.7;">3 jaar | 180 ECTS | Dagonderwijs | Campus Geel</p>
+          <div class="tags" style="margin-top:12px;">
+            <span class="tag">Hogeschool</span>
+            <span class="tag">Thomas More</span>
+            <span class="tag cyan">Geel</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>> Kernbeschrijving</h3>
+          <ul>
+            <li><p style="font-size:14px;">Netwerken, systemen en data beschermen</p></li>
+            <li><p style="font-size:14px;">Offensieve en defensieve technieken</p></li>
+            <li><p style="font-size:14px;">SOC bouwen in datacenter van de campus</p></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel" style="width:100%; max-width:980px;">
+        <h3>> Belangrijkste Vakken</h3>
+        <div class="grid-3" style="margin-top:14px; max-width:100%;">
+          <div>
+            <div style="font-size:11px; letter-spacing:2px; color:var(--green-dim); margin-bottom:8px;">FASE 1 — BASIS</div>
+            <ul class="hacker-list">
+              <li>Python & Java programmeren</li>
+              <li>Operating Systems</li>
+              <li>Webdesign</li>
+              <li>Security essentials</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:11px; letter-spacing:2px; color:var(--green-dim); margin-bottom:8px;">FASE 2 — VERDIEPING</div>
+            <ul class="hacker-list">
+              <li>Linux & Windows Server</li>
+              <li>Cloudplatformen</li>
+              <li>Application Security</li>
+              <li>Networks Advanced</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:11px; letter-spacing:2px; color:var(--green-dim); margin-bottom:8px;">FASE 3 — SPECIALISATIE</div>
+            <ul class="hacker-list">
+              <li>Cybersecurity & Security Operations</li>
+              <li>Cloud Engineering</li>
+              <li>Wireless Networks</li>
+              <li>IT Service Management</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3 — MOTIVATIE -->
+  <div class="slide" id="s3">
+    <div class="slide-tag">MOTIVATIE // ZELFREFLECTIE</div>
+    <div class="slide-num">03 / 09</div>
+    <div class="slide-inner fade-children">
+      <h2>WAAROM?</h2>
+
+      <div class="grid-2" style="max-width:980px;">
+        <div class="panel">
+          <h3>> Persoonlijke Drijfveren</h3>
+          <ul class="hacker-list" style="margin-top:8px;">
+            <li>Intresse in IT</li>
+            <li>De wereld veiliger maken</li>
+            <li>Een sector met constante uitdaging</li>
+          </ul>
+          <div class="highlight" style="margin-top:14px;">
+            <p style="font-size:13px; font-style:italic; opacity:0.85;"></p>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="panel">
+            <h3>> Vaardigheden & Troeven</h3>
+            <div class="skill-bar">
+              <div class="skill-label"><span>Logisch denken</span><span>▓▓▓▓▓</span></div>
+              <div class="skill-track"><div class="skill-fill" style="width:90%"></div></div>
+            </div>
+            <div class="skill-bar">
+              <div class="skill-label"><span>Probleemoplossend</span><span>▓▓▓▓░</span></div>
+              <div class="skill-track"><div class="skill-fill" style="width:80%"></div></div>
+            </div>
+            <div class="skill-bar">
+              <div class="skill-label"><span>Technische interesse</span><span>▓▓▓▓▓</span></div>
+              <div class="skill-track"><div class="skill-fill" style="width:95%"></div></div>
+            </div>
+            <div class="skill-bar">
+              <div class="skill-label"><span>Engels (technisch)</span><span>▓▓▓░░</span></div>
+              <div class="skill-track"><div class="skill-fill" style="width:65%"></div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>> Persoonlijkheid</h3>
+            <div class="tags">
+              <span class="tag">Analytisch</span>
+              <span class="tag">Nauwkeurig</span>
+              <span class="tag cyan">Nieuwsgierig</span>
+              <span class="tag red">Doorzetter</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4 — DE REALITEIT -->
+  <div class="slide" id="s4">
+    <div class="slide-tag">PRAKTIJK // STUDIEBELASTING</div>
+    <div class="slide-num">04 / 09</div>
+    <div class="slide-inner fade-children">
+      <h2>DE REALITEIT</h2>
+
+      <div class="panel" style="width:100%; max-width:920px;">
+        <h3>> Voorbeeld Week — Fase 1</h3>
+        <div class="week-grid" style="margin-top:16px;">
+          <div class="day-col">
+            <div class="day-name">Ma</div>
+            <div class="time-block">Data<br>Essentials</div>
+            <div class="time-block">Data<br>Essentials</div>
+            <div class="time-block">Communication<br>skills</div>
+            <div class="time-block">Communication<br>skills</div>
+          </div>
+          <div class="day-col">
+            <div class="day-name">Di</div>
+            <div class="time-block">Operating<br>Systems</div>
+            <div class="time-block">Operating<br>Systems</div>
+            <div class="time-block">Programming<br>Essentials</div>
+            <div class="time-block">Programming<br>Essentials</div>
+          </div>
+          <div class="day-col">
+            <div class="day-name">Wo</div>
+            <div class="time-block">Operating<br>Systems</div>
+            <div class="time-block">Webdesign<br>Essentials</div>
+            <div class="time-block">Webdesign<br>Essentials</div>
+            <div class="time-block lab">Professional<br>skills</div>
+            <div class="time-block lab">Professional<br>skills</div>
+          </div>
+          <div class="day-col">
+            <div class="day-name">Do</div>
+            <div class="time-block free">—</div>
+            <div class="time-block">Programming<br>Essentials</div>
+            <div class="time-block">Data<br>Essentials</div>
+            <div class="time-block">Webdesign<br>Essentials</div>
+          </div>
+          <div class="day-col">
+            <div class="day-name">Vr</div>
+            <div class="time-block free">—</div>
+            <div class="time-block free">—</div>
+            <div class="time-block free">—</div>
+            <div class="time-block free">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5 — INVESTERING -->
+  <div class="slide" id="s5">
+    <div class="slide-tag">FINANCIEEL // KOSTEN</div>
+    <div class="slide-num">05 / 09</div>
+    <div class="slide-inner fade-children">
+      <h2>INVESTERING</h2>
+
+      <div class="panel" style="width:100%; max-width:600px;">
+        <h3>> Studiekosten</h3>
+        <div class="cost-row">
+          <span>Inschrijvingsgeld</span>
+          <span class="cost-val">€305,4</span>
+        </div>
+        <div class="cost-row">
+          <span>Variabel (per studiepunt)</span>
+          <span class="cost-val">€14,60 × 60 SP = €876</span>
+        </div>
+        <div class="cost-row">
+          <span>Handboeken & cursusmateriaal</span>
+          <span class="cost-val">Geen idee</span>
+        </div>
+        <div class="cost-row">
+          <span>Laptop</span>
+          <span class="cost-val">±€1.899,00</span>
+        </div>
+        <div class="cost-row">
+          <span>Software</span>
+          <span class="cost-val">+€37</span>
+        </div>
+        <div class="cost-row total">
+          <span>TOTAAL</span>
+          <span class="cost-val">± €1.230 – €1.330</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6 — TOEKOMST -->
+  <div class="slide" id="s6">
+    <div class="slide-tag">ARBEIDSMARKT // CARRIÈRE</div>
+    <div class="slide-num">06 / 09</div>
+    <div class="slide-inner fade-children">
+      <h2>DE TOEKOMST</h2>
+
+      <div class="grid-4" style="margin-bottom:8px;">
+        <div class="panel stat">
+          <span class="stat-num">98%</span>
+          <span class="stat-label">Vindt werk<br>binnen 3 maanden</span>
+        </div>
+        <div class="panel stat">
+          <span class="stat-num">€3.2K</span>
+          <span class="stat-label">Gemiddeld startsalaris<br>bruto/maand</span>
+        </div>
+        <div class="panel stat">
+          <span class="stat-num">+40%</span>
+          <span class="stat-label">Groei cyberjobs<br>verwacht tegen 2030</span>
+        </div>
+        <div class="panel stat">
+          <span class="stat-num">∞</span>
+          <span class="stat-label">Openstaande vacatures<br>in België vandaag</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="max-width:980px;">
+        <div class="panel">
+          <h3>> Beroepen met dit diploma</h3>
+          <ul class="hacker-list">
+            <li><strong>Cybersecurity Consultant</strong></li>
+            <li><strong>SOC Engineer</strong> (Security Operations Center)</li>
+            <li><strong>Security Engineer</strong></li>
+            <li>Penetration Tester (ethisch hacker)</li>
+            <li>Cloud Security Architect</li>
+            <li>Incident Response Analyst</li>
+            <li>IT Security Auditor</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>> Doorgroeimogelijkheden</h3>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-dot"></div>
+              <div><strong>Schakeljaar</strong> → Master Industriële Wetenschappen</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot"></div>
+              <div><strong>Double Degree</strong> → Diploma buitenlandse hogeschool (Finland, Zwitserland…)</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot"></div>
+              <div><strong>Certificaten</strong> → CompTIA Security+, CEH, CISSP, OSCP</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot"></div>
+              <div><strong>CISO</strong> — Chief Information Security Officer (topfunctie)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7 — IMPACT -->
+  <div class="slide" id="s7">
+    <div class="slide-tag">MAATSCHAPPIJ // IMPACT</div>
+    <div class="slide-num">07 / 09</div>
+    <div class="slide-inner fade-children">
+      <h2>IMPACT</h2>
+
+      <div class="panel" style="width:100%; max-width:980px;">
+        <h3>> De wereld veiliger maken — letterlijk</h3>
+        <div class="grid-3" style="margin-top:16px; max-width:100%;">
+          <div>
+            <div style="font-size:28px; text-align:center; margin-bottom:8px; text-shadow:0 0 15px var(--green);">🏥</div>
+            <h3 style="text-align:center; font-size:11px;">Ziekenhuizen</h3>
+            <p style="font-size:13px; text-align:center; opacity:0.8;">Patiëntendata en kritieke systemen beschermen tegen ransomware-aanvallen</p>
+          </div>
+          <div>
+            <div style="font-size:28px; text-align:center; margin-bottom:8px; text-shadow:0 0 15px var(--green);">🏛️</div>
+            <h3 style="text-align:center; font-size:11px;">Overheid</h3>
+            <p style="font-size:13px; text-align:center; opacity:0.8;">38,2% van Europese cyberaanvallen richt zich op de publieke sector (ENISA 2025)</p>
+          </div>
+          <div>
+            <div style="font-size:28px; text-align:center; margin-bottom:8px; text-shadow:0 0 15px var(--green);">🏭</div>
+            <h3 style="text-align:center; font-size:11px;">Kritieke infrastructuur</h3>
+            <p style="font-size:13px; text-align:center; opacity:0.8;">Energienetwerken, watervoorziening, transport — allemaal afhankelijk van security</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight" style="width:100%; max-width:980px; text-align:center;">
+        <p style="font-size:15px; letter-spacing:1px;">
+          Elke dag worden miljoenen aanvallen uitgevoerd op Belgische systemen.<br>
+          <strong>Jij kan deel uitmaken van de mensen die hen tegenhouden.</strong>
+        </p>
+      </div>
+
+      <div class="panel" style="width:100%; max-width:980px;">
+        <h3>> Ethiek in Cybersecurity</h3>
+        <p style="font-size:14px;">Cybersecurity professionals zijn de <em>digitale verdedigers</em> van de samenleving. Ze werken binnen strikte ethische en juridische kaders — het gaat niet over aanvallen, maar over beschermen. Privacy, vertrouwen en digitale rechten staan centraal.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8 — AANPAK -->
+  <div class="slide" id="s8">
+    <div class="slide-tag">STUDIEMETHODE // DISCIPLINE</div>
+    <div class="slide-num">08 / 09</div>
+    <div class="slide-inner fade-children">
+      <h2>AANPAK</h2>
+
+      <div class="grid-2" style="max-width:980px;">
+        <div class="panel">
+          <h3>> Effectieve Studiemethoden</h3>
+          <ul class="hacker-list">
+            <li><strong>Active recall</strong> — flashcards & zelftests (Anki)</li>
+            <li><strong>Hands-on</strong> — eigen homelab opzetten (VirtualBox/VMware)</li>
+            <li><strong>CTF-oefeningen</strong> — Capture The Flag platforms (HackTheBox, TryHackMe)</li>
+            <li><strong>Spaced repetition</strong> — leerstof spreiden in de tijd</li>
+            <li><strong>Projectgebonden leren</strong> — direct toepassen in practica</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>> Zelfstandigheid & Discipline</h3>
+          <p style="margin-bottom:12px; font-size:14px;">IT-studies vragen een <strong>hoge mate van autonomie</strong>. Thomas More structureert dit via:</p>
+          <ul class="hacker-list">
+            <li>Personal coach in jaar 1</li>
+            <li>Examens per periode (minder opeenstapeling)</li>
+            <li>Snelle feedback op resultaten</li>
+            <li>Trajectcoach voor studieplan</li>
+          </ul>
+          <div class="highlight" style="margin-top:12px;">
+            <p style="font-size:13px;">Verwachte zelfstudie: <strong>±15 uur/week</strong> bovenop de lessen.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="width:100%; max-width:980px;">
+        <h3>> Mijn Plan van Aanpak</h3>
+        <div class="grid-3" style="margin-top:12px; max-width:100%;">
+          <div>
+            <div style="font-size:11px; letter-spacing:2px; color:var(--cyan); margin-bottom:8px;">VOOR DE START</div>
+            <ul class="hacker-list" style="font-size:13px;">
+              <li>Linux basics leren</li>
+              <li>Python intro (Codecademy)</li>
+              <li>TryHackMe beginnerspath</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:11px; letter-spacing:2px; color:var(--cyan); margin-bottom:8px;">TIJDENS JAAR 1</div>
+            <ul class="hacker-list" style="font-size:13px;">
+              <li>Vaste studieblokken plannen</li>
+              <li>Eigen homelab opzetten</li>
+              <li>Actieve participatie labs</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:11px; letter-spacing:2px; color:var(--cyan); margin-bottom:8px;">LANGE TERMIJN</div>
+            <ul class="hacker-list" style="font-size:13px;">
+              <li>CompTIA Security+ cert</li>
+              <li>Stage in security-bedrijf</li>
+              <li>Netwerk opbouwen</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9 — SLOT -->
+  <div class="slide" id="s9">
+    <div class="slide-tag">CONCLUSIE // VRAGEN</div>
+    <div class="slide-num">09 / 09</div>
+
+    <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:20px;">
+      <div style="font-family:'Share Tech Mono'; font-size:11px; letter-spacing:4px; color:var(--green-dim); opacity:0.5;">
+        [ TRANSMISSION END ]
+      </div>
+      <h1 style="font-size:clamp(22px,4vw,48px);">VRAGEN?</h1>
+      <div class="subtitle" style="max-width:600px; line-height:1.8;">
+        Cloud & Cyber Security<br>
+        Thomas More — Campus Geel<br>
+        <span style="opacity:0.5;">Start september 2026</span>
+      </div>
+
+      <div class="panel" style="max-width:650px; width:100%; margin-top:8px;">
+        <h3 style="text-align:center; margin-bottom:16px;">> Samenvatting</h3>
+        <div class="grid-2" style="gap:10px; max-width:100%;">
+          <div style="font-size:12px; font-family:'Share Tech Mono';">
+            <span style="color:var(--green-dim);">INSTELLING:</span><br>Thomas More, Geel
+          </div>
+          <div style="font-size:12px; font-family:'Share Tech Mono';">
+            <span style="color:var(--green-dim);">DUUR:</span><br>3 jaar | 180 ECTS
+          </div>
+          <div style="font-size:12px; font-family:'Share Tech Mono';">
+            <span style="color:var(--green-dim);">JOBS:</span><br>SOC, Consultant, Engineer
+          </div>
+          <div style="font-size:12px; font-family:'Share Tech Mono';">
+            <span style="color:var(--green-dim);">WERKZEKERHEID:</span><br>98% binnen 3 maanden
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:8px;">
+        <span class="tag">thomasmore.be</span>
+        <span class="tag cyan">campus Geel</span>
+        <span class="tag red">cybersecurity</span>
+      </div>
+
+      <div style="font-family:'Share Tech Mono'; font-size:10px; letter-spacing:3px; color:rgba(0,255,65,0.2); margin-top:16px;" class="blink">
+        ACCESS GRANTED
+      </div>
+    </div>
+  </div>
+
+</div><!-- /slides -->
+
+<div id="nav">
+  <button onclick="changeSlide(-1)">&#9664; PREV</button>
+  <div id="slide-counter">01 / 09</div>
+  <button onclick="changeSlide(1)">NEXT &#9654;</button>
+</div>
+
+<div id="kb-hint">← → NAVIGEREN</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+  let cols, drops;
+
+  function init(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / 16);
+    drops = Array.from({length: cols}, () => Math.random() * canvas.height / 16);
+  }
+
+  const chars = '01アイウエオカキクケコサシスセソネニヌノハヒフヘホABCDEF0123456789></#$%^&*';
+
+  function draw(){
+    ctx.fillStyle = 'rgba(5,5,5,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = '14px Share Tech Mono, monospace';
+    for(let i = 0; i < drops.length; i++){
+      const c = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(c, i * 16, drops[i] * 16);
+      if(drops[i] * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i] += 0.5;
+    }
+  }
+
+  init();
+  setInterval(draw, 50);
+  window.addEventListener('resize', init);
+})();
+
+let current = 1;
+const total = 9;
+
+function changeSlide(dir){
+  const next = current + dir;
+  if(next < 1 || next > total) return;
+  document.getElementById('s' + current).classList.remove('active');
+  current = next;
+  document.getElementById('s' + current).classList.add('active');
+  document.getElementById('slide-counter').textContent =
+    String(current).padStart(2,'0') + ' / ' + String(total).padStart(2,'0');
+  document.getElementById('progress').style.width = (current / total * 100) + '%';
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') changeSlide(1);
+  if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') changeSlide(-1);
+});
+
+let touchX = 0;
+document.addEventListener('touchstart', e => touchX = e.touches[0].clientX);
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchX;
+  if(Math.abs(dx) > 50) changeSlide(dx < 0 ? 1 : -1);
+});
+
+document.getElementById('progress').style.width = (1/total*100) + '%';
+</script>
+</body>
+</html>
